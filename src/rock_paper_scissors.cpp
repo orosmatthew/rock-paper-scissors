@@ -240,6 +240,20 @@ void update_pieces_collision(std::vector<Piece>& pieces, int piece_size)
     }
 }
 
+std::optional<int> get_piece_from_click(std::vector<Piece>& pieces, int piece_size, raylib::Vector2 mouse_pos)
+{
+    raylib::Vector2 size(static_cast<float>(piece_size), static_cast<float>(piece_size));
+    int i = 0;
+    for (Piece& p : pieces) {
+        raylib::Rectangle rect(p.pos, size);
+        if (rect.CheckCollision(mouse_pos)) {
+            return i;
+        }
+        i++;
+    }
+    return {};
+}
+
 void run(const RockPaperScissorsConfig& config)
 {
     int width = config.screen_width;
@@ -281,6 +295,8 @@ void run(const RockPaperScissorsConfig& config)
 
     bool is_paused = false;
 
+    std::optional<int> selected_piece_index;
+
     fixed_loop.set_callback([&]() {
         if (!is_paused) {
             update_pieces_pos(pieces, width, height, config.piece_size);
@@ -314,6 +330,20 @@ void run(const RockPaperScissorsConfig& config)
             else {
                 is_paused = true;
             }
+        }
+
+        if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && selected_piece_index.has_value()) {
+            selected_piece_index.reset();
+        }
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            selected_piece_index = get_piece_from_click(pieces, config.piece_size, GetMousePosition());
+        }
+
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && selected_piece_index.has_value()) {
+            pieces.at(selected_piece_index.value()).pos = raylib::Vector2(GetMousePosition())
+                - raylib::Vector2(static_cast<float>(config.piece_size) / 2.0f,
+                                  static_cast<float>(config.piece_size) / 2.0f);
         }
 
         fixed_loop.update();
