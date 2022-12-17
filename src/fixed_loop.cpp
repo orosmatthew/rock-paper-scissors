@@ -3,7 +3,9 @@
 #include <chrono>
 #include <iostream>
 
-FixedLoop::FixedLoop(double rate)
+namespace util {
+
+FixedLoop::FixedLoop(float rate)
 {
     m_start = std::chrono::steady_clock::now();
     m_end = std::chrono::steady_clock::now();
@@ -24,6 +26,7 @@ void FixedLoop::update()
     else {
         m_is_ready = false;
     }
+    m_blend = static_cast<double>(m_delta) / static_cast<double>(m_rate);
 }
 
 bool FixedLoop::is_ready() const
@@ -31,14 +34,14 @@ bool FixedLoop::is_ready() const
     return m_is_ready;
 }
 
-void FixedLoop::set_rate(double rate)
+void FixedLoop::set_rate(float rate)
 {
     m_rate = static_cast<int64_t>((static_cast<double>(1.0f / rate)) * static_cast<int64_t>(1000000000));
 }
 
-double FixedLoop::blend() const
+float FixedLoop::blend() const
 {
-    return static_cast<double>(m_delta) / static_cast<double>(m_rate);
+    return static_cast<float>(m_blend);
 }
 
 void FixedLoop::reset()
@@ -49,7 +52,4 @@ void FixedLoop::reset()
     m_is_ready = false;
 }
 
-double FixedLoop::rate() const
-{
-    return m_rate;
 }

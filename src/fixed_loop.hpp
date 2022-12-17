@@ -2,18 +2,18 @@
 
 #include <chrono>
 
+namespace util {
+
 class FixedLoop {
 
 public:
-    explicit FixedLoop(double rate);
+    explicit FixedLoop(float rate);
 
-    void set_rate(double rate);
+    void set_rate(float rate);
 
     void reset();
 
-    [[nodiscard]] double blend() const;
-
-    [[nodiscard]] double rate() const;
+    [[nodiscard]] float blend() const;
 
     FixedLoop(FixedLoop const& other) = delete;
     FixedLoop& operator=(FixedLoop const& other) = delete;
@@ -28,4 +28,7 @@ private:
     int64_t m_delta;
     bool m_is_ready;
     int64_t m_rate;
+    double m_blend;
 };
+
+}
