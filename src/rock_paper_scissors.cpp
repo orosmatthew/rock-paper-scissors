@@ -19,6 +19,7 @@ enum class PieceType {
 
 struct Piece {
     PieceType type;
+    raylib::Vector2 prev_vel;
     raylib::Vector2 prev_pos;
     raylib::Vector2 pos;
 };
@@ -50,8 +51,11 @@ void update_pieces_pos(std::vector<Piece>& pieces, int screen_width, int screen_
     const int max_loops = static_cast<int>(pieces.size());
 
     for (Piece& p : pieces) {
-        raylib::Vector2 prev_vel = p.pos - p.prev_pos;
+        p.prev_vel = p.pos - p.prev_pos;
         p.prev_pos = p.pos;
+    }
+
+    for (Piece& p : pieces) {
 
         float min_dist = std::numeric_limits<float>::max();
         int min_piece_index = -1;
@@ -125,7 +129,7 @@ void update_pieces_pos(std::vector<Piece>& pieces, int screen_width, int screen_
         }
 
         if (is_same) {
-            p.pos += prev_vel;
+            p.pos += p.prev_vel;
         }
         else {
             const float repel_speed = 1;
@@ -248,6 +252,8 @@ void run(const RockPaperScissorsConfig& config)
 
     raylib::AudioDevice audio_device;
 
+    audio_device.SetVolume(0.5);
+
     SetExitKey(KEY_ESCAPE);
 
     std::filesystem::path res_path = std::filesystem::path(GetApplicationDirectory()) / "../" / "res";
@@ -273,9 +279,13 @@ void run(const RockPaperScissorsConfig& config)
 
     std::vector<Piece> pieces = init_pieces(config.piece_count, config.screen_width, config.screen_height);
 
+    bool is_paused = false;
+
     fixed_loop.set_callback([&]() {
-        update_pieces_pos(pieces, width, height, config.piece_size);
-        update_pieces_collision(pieces, config.piece_size);
+        if (!is_paused) {
+            update_pieces_pos(pieces, width, height, config.piece_size);
+            update_pieces_collision(pieces, config.piece_size);
+        }
     });
 
     while (!window.ShouldClose()) {
@@ -297,22 +307,36 @@ void run(const RockPaperScissorsConfig& config)
             window.ToggleFullscreen();
         }
 
+        if (IsKeyPressed(KEY_P)) {
+            if (is_paused) {
+                is_paused = false;
+            }
+            else {
+                is_paused = true;
+            }
+        }
+
         fixed_loop.update();
 
         BeginDrawing();
         {
             window.ClearBackground(raylib::Color::RayWhite());
 
+            float blend = fixed_loop.blend();
+            if (is_paused) {
+                blend = 1;
+            }
+
             for (Piece& p : pieces) {
                 switch (p.type) {
                 case PieceType::e_rock:
-                    rock_texture.Draw(p.prev_pos.Lerp(p.pos, fixed_loop.blend()));
+                    rock_texture.Draw(p.prev_pos.Lerp(p.pos, blend));
                     break;
                 case PieceType::e_paper:
-                    paper_texture.Draw(p.prev_pos.Lerp(p.pos, fixed_loop.blend()));
+                    paper_texture.Draw(p.prev_pos.Lerp(p.pos, blend));
                     break;
                 case PieceType::e_scissors:
-                    scissors_texture.Draw(p.prev_pos.Lerp(p.pos, fixed_loop.blend()));
+                    scissors_texture.Draw(p.prev_pos.Lerp(p.pos, blend));
                     break;
                 }
             }
