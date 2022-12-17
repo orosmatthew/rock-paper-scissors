@@ -7,6 +7,10 @@
 
 namespace rps {
 
+static raylib::Sound rock_sound;
+static raylib::Sound paper_sound;
+static raylib::Sound scissors_sound;
+
 enum class PieceType {
     e_rock,
     e_paper,
@@ -141,11 +145,32 @@ void update_pieces_pos(std::vector<Piece>& pieces, int screen_width, int screen_
     }
 }
 
+void piece_change_sound(PieceType type)
+{
+    switch (type) {
+
+    case PieceType::e_rock:
+        rock_sound.Play();
+        break;
+    case PieceType::e_paper:
+        paper_sound.Play();
+        break;
+    case PieceType::e_scissors:
+        scissors_sound.Play();
+        break;
+    }
+}
+
 void update_pieces_collision(std::vector<Piece>& pieces, int piece_size)
 {
     float inner_padding = static_cast<float>(piece_size) * 0.2f;
     raylib::Vector2 size(
         static_cast<float>(piece_size) - inner_padding, static_cast<float>(piece_size) - inner_padding);
+
+    bool rock_changed = false;
+    bool paper_changed = false;
+    bool scissors_changed = false;
+
     for (int p1 = 0; p1 < pieces.size() - 1; p1++) {
         for (int p2 = p1 + 1; p2 < pieces.size(); p2++) {
             raylib::Rectangle p1_rect(pieces.at(p1).pos, size);
@@ -159,9 +184,11 @@ void update_pieces_collision(std::vector<Piece>& pieces, int piece_size)
                         break;
                     case PieceType::e_paper:
                         pieces.at(p1).type = PieceType::e_paper;
+                        paper_changed = true;
                         break;
                     case PieceType::e_scissors:
                         pieces.at(p2).type = PieceType::e_rock;
+                        rock_changed = true;
                         break;
                     }
                     break;
@@ -169,11 +196,13 @@ void update_pieces_collision(std::vector<Piece>& pieces, int piece_size)
                     switch (pieces.at(p2).type) {
                     case PieceType::e_rock:
                         pieces.at(p2).type = PieceType::e_paper;
+                        paper_changed = true;
                         break;
                     case PieceType::e_paper:
                         break;
                     case PieceType::e_scissors:
                         pieces.at(p1).type = PieceType::e_scissors;
+                        scissors_changed = true;
                         break;
                     }
                     break;
@@ -181,9 +210,11 @@ void update_pieces_collision(std::vector<Piece>& pieces, int piece_size)
                     switch (pieces.at(p2).type) {
                     case PieceType::e_rock:
                         pieces.at(p1).type = PieceType::e_rock;
+                        rock_changed = true;
                         break;
                     case PieceType::e_paper:
                         pieces.at(p2).type = PieceType::e_scissors;
+                        scissors_changed = true;
                         break;
                     case PieceType::e_scissors:
                         break;
@@ -192,6 +223,16 @@ void update_pieces_collision(std::vector<Piece>& pieces, int piece_size)
                 }
             }
         }
+    }
+
+    if (rock_changed) {
+        piece_change_sound(PieceType::e_rock);
+    }
+    if (paper_changed) {
+        piece_change_sound(PieceType::e_paper);
+    }
+    if (scissors_changed) {
+        piece_change_sound(PieceType::e_scissors);
     }
 }
 
@@ -204,6 +245,8 @@ void run(const RockPaperScissorsConfig& config)
     SetConfigFlags(ConfigFlags::FLAG_WINDOW_RESIZABLE);
 
     raylib::Window window(config.screen_width, config.screen_height, "Rock Paper Scissors");
+
+    raylib::AudioDevice audio_device;
 
     SetExitKey(KEY_ESCAPE);
 
@@ -223,6 +266,10 @@ void run(const RockPaperScissorsConfig& config)
     raylib::Texture2D rock_texture(rock_image);
     raylib::Texture2D paper_texture(paper_image);
     raylib::Texture2D scissors_texture(scissors_image);
+
+    rock_sound = raylib::Sound((res_path / "rock.wav").string());
+    paper_sound = raylib::Sound((res_path / "paper.wav").string());
+    scissors_sound = raylib::Sound((res_path / "scissors.wav").string());
 
     std::vector<Piece> pieces = init_pieces(config.piece_count, config.screen_width, config.screen_height);
 
