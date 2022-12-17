@@ -39,11 +39,86 @@ std::vector<Piece> init_pieces(int count, int screen_width, int screen_height)
     return pieces;
 }
 
-void update_pieces(std::vector<Piece>& pieces, int screen_width, int screen_height, int piece_size)
+void update_pieces_pos(std::vector<Piece>& pieces, int screen_width, int screen_height, int piece_size)
 {
+    const int sample_count = 10;
+
     for (Piece& p : pieces) {
+        raylib::Vector2 prev_vel = p.pos - p.prev_pos;
         p.prev_pos = p.pos;
-        p.pos += raylib::Vector2(static_cast<float>(GetRandomValue(-2, 2)), static_cast<float>(GetRandomValue(-2, 2)));
+
+        float min_dist = std::numeric_limits<float>::max();
+        int min_piece_index;
+        for (int i = 0; i < sample_count; i++) {
+            int index = GetRandomValue(0, static_cast<int>(pieces.size()) - 1);
+            Piece& rand_piece = pieces.at(index);
+            float dist = p.pos.DistanceSqr(rand_piece.pos);
+            if (dist < min_dist) {
+                min_dist = dist;
+                min_piece_index = index;
+            }
+        }
+
+        Piece& p2 = pieces.at(min_piece_index);
+
+        bool is_attracted;
+        bool is_same = false;
+
+        switch (p.type) {
+        case PieceType::e_rock:
+            switch (p2.type) {
+            case PieceType::e_rock:
+                is_same = true;
+                break;
+            case PieceType::e_paper:
+                is_attracted = false;
+                break;
+            case PieceType::e_scissors:
+                is_attracted = true;
+                break;
+            }
+        case PieceType::e_paper:
+            switch (p2.type) {
+            case PieceType::e_rock:
+                is_attracted = true;
+                break;
+            case PieceType::e_paper:
+                is_same = true;
+                break;
+            case PieceType::e_scissors:
+                is_attracted = false;
+                break;
+            }
+            break;
+        case PieceType::e_scissors:
+            switch (p2.type) {
+            case PieceType::e_rock:
+                is_attracted = false;
+                break;
+            case PieceType::e_paper:
+                is_attracted = true;
+                break;
+            case PieceType::e_scissors:
+                is_same = true;
+                break;
+            }
+            break;
+        }
+
+        if (is_same) {
+            p.pos += prev_vel;
+        }
+        else {
+            const float speed = 1.5;
+            if (is_attracted) {
+                raylib::Vector2 vel = (p2.pos - p.pos).Normalize() * speed;
+                p.pos += vel;
+            }
+            else {
+                raylib::Vector2 vel = (p2.pos - p.pos).Normalize() * speed;
+                p.pos -= vel;
+            }
+        }
 
         p.pos.x = std::clamp(p.pos.x, 0.0f, static_cast<float>(screen_width) - static_cast<float>(piece_size));
         p.pos.y = std::clamp(p.pos.y, 0.0f, static_cast<float>(screen_height) - static_cast<float>(piece_size));
@@ -75,13 +150,17 @@ void run(const RockPaperScissorsConfig& config)
     raylib::Texture2D paper_texture(paper_image);
     raylib::Texture2D scissors_texture(scissors_image);
 
-    std::vector<Piece> pieces = init_pieces(100, config.screen_width, config.screen_height);
+    std::vector<Piece> pieces = init_pieces(config.piece_count, config.screen_width, config.screen_height);
 
     fixed_loop.set_callback([&]() {
-        update_pieces(pieces, config.screen_width, config.screen_height, config.piece_size);
+        update_pieces_pos(pieces, config.screen_width, config.screen_height, config.piece_size);
     });
 
     while (!window.ShouldClose()) {
+
+        if (IsKeyPressed(KEY_SPACE)) {
+            pieces = init_pieces(config.piece_count, config.screen_width, config.screen_height);
+        }
 
         fixed_loop.update();
 

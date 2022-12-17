@@ -9,6 +9,7 @@ struct RockPaperScissorsConfig {
     int screen_height;
     float simulation_rate;
     int piece_size;
+    int piece_count;
 };
 
 void run(const RockPaperScissorsConfig& config);
