@@ -7,7 +7,7 @@ int main()
     rps::RockPaperScissorsConfig config {
         .screen_width = 1200,
         .screen_height = 800,
-        .simulation_rate = 30,
+        .simulation_rate = 45,
         .piece_size = 27,
         .piece_count = 125,
     };
