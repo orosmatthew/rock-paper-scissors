@@ -197,11 +197,15 @@ void update_pieces_collision(std::vector<Piece>& pieces, int piece_size)
 
 void run(const RockPaperScissorsConfig& config)
 {
+    int width = config.screen_width;
+    int height = config.screen_height;
+
     SetConfigFlags(ConfigFlags::FLAG_VSYNC_HINT);
+    SetConfigFlags(ConfigFlags::FLAG_WINDOW_RESIZABLE);
 
     raylib::Window window(config.screen_width, config.screen_height, "Rock Paper Scissors");
 
-    SetExitKey(KEY_NULL);
+    SetExitKey(KEY_ESCAPE);
 
     std::filesystem::path res_path = std::filesystem::path(GetApplicationDirectory()) / "../" / "res";
 
@@ -223,14 +227,27 @@ void run(const RockPaperScissorsConfig& config)
     std::vector<Piece> pieces = init_pieces(config.piece_count, config.screen_width, config.screen_height);
 
     fixed_loop.set_callback([&]() {
-        update_pieces_pos(pieces, config.screen_width, config.screen_height, config.piece_size);
+        update_pieces_pos(pieces, width, height, config.piece_size);
         update_pieces_collision(pieces, config.piece_size);
     });
 
     while (!window.ShouldClose()) {
 
         if (IsKeyPressed(KEY_SPACE)) {
-            pieces = init_pieces(config.piece_count, config.screen_width, config.screen_height);
+            pieces = init_pieces(config.piece_count, width, height);
+        }
+
+        if (window.IsResized()) {
+            height = window.GetHeight();
+            width = window.GetWidth();
+        }
+
+        if (IsKeyPressed(KEY_F)) {
+            int display = GetCurrentMonitor();
+            window.SetSize(GetMonitorWidth(display), GetMonitorHeight(display));
+            height = window.GetHeight();
+            width = window.GetWidth();
+            window.ToggleFullscreen();
         }
 
         fixed_loop.update();
