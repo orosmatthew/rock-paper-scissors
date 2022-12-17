@@ -8,8 +8,8 @@ int main()
         .screen_width = 1200,
         .screen_height = 800,
         .simulation_rate = 30,
-        .piece_size = 30,
-        .piece_count = 100,
+        .piece_size = 27,
+        .piece_count = 125,
     };
 
     try {

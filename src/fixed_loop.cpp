@@ -12,6 +12,7 @@ FixedLoop::FixedLoop(float rate)
     m_delta = 0;
     m_is_ready = false;
     m_rate = static_cast<int64_t>((static_cast<double>(1.0 / rate)) * static_cast<int64_t>(1000000000));
+    m_blend = 0;
 }
 
 void FixedLoop::update()

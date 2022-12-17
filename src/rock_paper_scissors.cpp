@@ -1,6 +1,7 @@
 #include "rock_paper_scissors.hpp"
 
 #include <filesystem>
+#include <iostream>
 
 #include "fixed_loop.hpp"
 
@@ -41,22 +42,35 @@ std::vector<Piece> init_pieces(int count, int screen_width, int screen_height)
 
 void update_pieces_pos(std::vector<Piece>& pieces, int screen_width, int screen_height, int piece_size)
 {
-    const int sample_count = 10;
+    const int samples = 10;
+    const int max_loops = static_cast<int>(pieces.size());
 
     for (Piece& p : pieces) {
         raylib::Vector2 prev_vel = p.pos - p.prev_pos;
         p.prev_pos = p.pos;
 
         float min_dist = std::numeric_limits<float>::max();
-        int min_piece_index;
-        for (int i = 0; i < sample_count; i++) {
+        int min_piece_index = -1;
+        int sample_count = 0;
+        for (int i = 0; i < max_loops; i++) {
             int index = GetRandomValue(0, static_cast<int>(pieces.size()) - 1);
             Piece& rand_piece = pieces.at(index);
-            float dist = p.pos.DistanceSqr(rand_piece.pos);
+            if (rand_piece.type == p.type) {
+                continue;
+            }
+            sample_count++;
+            float dist = p.prev_pos.DistanceSqr(rand_piece.prev_pos);
             if (dist < min_dist) {
                 min_dist = dist;
                 min_piece_index = index;
             }
+            if (sample_count >= samples) {
+                break;
+            }
+        }
+
+        if (min_piece_index == -1) {
+            continue;
         }
 
         Piece& p2 = pieces.at(min_piece_index);
@@ -77,6 +91,7 @@ void update_pieces_pos(std::vector<Piece>& pieces, int screen_width, int screen_
                 is_attracted = true;
                 break;
             }
+            break;
         case PieceType::e_paper:
             switch (p2.type) {
             case PieceType::e_rock:
@@ -109,19 +124,74 @@ void update_pieces_pos(std::vector<Piece>& pieces, int screen_width, int screen_
             p.pos += prev_vel;
         }
         else {
-            const float speed = 1.5;
+            const float repel_speed = 1;
+            const float attract_speed = 2;
             if (is_attracted) {
-                raylib::Vector2 vel = (p2.pos - p.pos).Normalize() * speed;
+                raylib::Vector2 vel = (p2.prev_pos - p.prev_pos).Normalize() * attract_speed;
                 p.pos += vel;
             }
             else {
-                raylib::Vector2 vel = (p2.pos - p.pos).Normalize() * speed;
-                p.pos -= vel;
+                raylib::Vector2 vel = ((p2.prev_pos - p.prev_pos).Normalize() * repel_speed).Negate();
+                p.pos += vel;
             }
         }
 
         p.pos.x = std::clamp(p.pos.x, 0.0f, static_cast<float>(screen_width) - static_cast<float>(piece_size));
         p.pos.y = std::clamp(p.pos.y, 0.0f, static_cast<float>(screen_height) - static_cast<float>(piece_size));
+    }
+}
+
+void update_pieces_collision(std::vector<Piece>& pieces, int piece_size)
+{
+    float inner_padding = static_cast<float>(piece_size) * 0.2f;
+    raylib::Vector2 size(
+        static_cast<float>(piece_size) - inner_padding, static_cast<float>(piece_size) - inner_padding);
+    for (int p1 = 0; p1 < pieces.size() - 1; p1++) {
+        for (int p2 = p1 + 1; p2 < pieces.size(); p2++) {
+            raylib::Rectangle p1_rect(pieces.at(p1).pos, size);
+            raylib::Rectangle p2_rect(pieces.at(p2).pos, size);
+
+            if (p1_rect.CheckCollision(p2_rect)) {
+                switch (pieces.at(p1).type) {
+                case PieceType::e_rock:
+                    switch (pieces.at(p2).type) {
+                    case PieceType::e_rock:
+                        break;
+                    case PieceType::e_paper:
+                        pieces.at(p1).type = PieceType::e_paper;
+                        break;
+                    case PieceType::e_scissors:
+                        pieces.at(p2).type = PieceType::e_rock;
+                        break;
+                    }
+                    break;
+                case PieceType::e_paper:
+                    switch (pieces.at(p2).type) {
+                    case PieceType::e_rock:
+                        pieces.at(p2).type = PieceType::e_paper;
+                        break;
+                    case PieceType::e_paper:
+                        break;
+                    case PieceType::e_scissors:
+                        pieces.at(p1).type = PieceType::e_scissors;
+                        break;
+                    }
+                    break;
+                case PieceType::e_scissors:
+                    switch (pieces.at(p2).type) {
+                    case PieceType::e_rock:
+                        pieces.at(p1).type = PieceType::e_rock;
+                        break;
+                    case PieceType::e_paper:
+                        pieces.at(p2).type = PieceType::e_scissors;
+                        break;
+                    case PieceType::e_scissors:
+                        break;
+                    }
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -154,6 +224,7 @@ void run(const RockPaperScissorsConfig& config)
 
     fixed_loop.set_callback([&]() {
         update_pieces_pos(pieces, config.screen_width, config.screen_height, config.piece_size);
+        update_pieces_collision(pieces, config.piece_size);
     });
 
     while (!window.ShouldClose()) {
