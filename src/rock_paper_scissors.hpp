@@ -8,19 +8,9 @@ struct RockPaperScissorsConfig {
     int screen_width;
     int screen_height;
     float simulation_rate;
+    int piece_size;
 };
 
-class RockPaperScissors {
-
-public:
-    explicit RockPaperScissors(const RockPaperScissorsConfig& config);
-
-    void run();
-
-private:
-    const int m_screen_width;
-    const int m_screen_height;
-    const float m_simulation_rate;
-};
+void run(const RockPaperScissorsConfig& config);
 
 }

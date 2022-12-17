@@ -7,13 +7,12 @@ int main()
     rps::RockPaperScissorsConfig config {
         .screen_width = 1200,
         .screen_height = 800,
-        .simulation_rate = 60,
+        .simulation_rate = 30,
+        .piece_size = 30,
     };
 
-    rps::RockPaperScissors game(config);
-
     try {
-        game.run();
+        rps::run(config);
     }
     catch (std::exception& e) {
         std::cerr << "[ERROR] " << e.what() << std::endl;
