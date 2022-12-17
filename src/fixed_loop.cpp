@@ -16,22 +16,13 @@ FixedLoop::FixedLoop(float rate)
 
 void FixedLoop::update()
 {
-    m_start = std::chrono::steady_clock::now();
-    m_delta += std::chrono::duration_cast<std::chrono::nanoseconds>(m_start - m_end).count();
-    m_end = m_start;
-    if (m_delta >= m_rate) {
-        m_is_ready = true;
-        m_delta -= m_rate;
+    update_state();
+    while (m_is_ready) {
+        if (m_callback.has_value()) {
+            std::invoke(*m_callback);
+        }
+        update_state();
     }
-    else {
-        m_is_ready = false;
-    }
-    m_blend = static_cast<double>(m_delta) / static_cast<double>(m_rate);
-}
-
-bool FixedLoop::is_ready() const
-{
-    return m_is_ready;
 }
 
 void FixedLoop::set_rate(float rate)
@@ -50,6 +41,31 @@ void FixedLoop::reset()
     m_end = std::chrono::steady_clock::now();
     m_delta = 0;
     m_is_ready = false;
+}
+
+void FixedLoop::set_callback(std::function<void()> callback)
+{
+    m_callback = std::move(callback);
+}
+
+void FixedLoop::remove_callback()
+{
+    m_callback.reset();
+}
+
+void FixedLoop::update_state()
+{
+    m_start = std::chrono::steady_clock::now();
+    m_delta += std::chrono::duration_cast<std::chrono::nanoseconds>(m_start - m_end).count();
+    m_end = m_start;
+    if (m_delta >= m_rate) {
+        m_is_ready = true;
+        m_delta -= m_rate;
+    }
+    else {
+        m_is_ready = false;
+    }
+    m_blend = static_cast<double>(m_delta) / static_cast<double>(m_rate);
 }
 
 }

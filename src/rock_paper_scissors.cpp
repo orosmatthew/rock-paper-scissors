@@ -1,8 +1,6 @@
 #include "rock_paper_scissors.hpp"
 
-#include <cstdlib>
 #include <filesystem>
-#include <iostream>
 
 #include "fixed_loop.hpp"
 
@@ -33,13 +31,14 @@ void RockPaperScissors::run()
     raylib::Vector2 prev_pos;
     raylib::Vector2 pos(50, 50);
 
+    fixed_loop.set_callback([&]() {
+        prev_pos = pos;
+        pos.x += 1;
+    });
+
     while (!window.ShouldClose()) {
+
         fixed_loop.update();
-        while (fixed_loop.is_ready()) {
-            prev_pos = pos;
-            pos.x += 1;
-            fixed_loop.update();
-        }
 
         BeginDrawing();
         {

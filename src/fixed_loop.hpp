@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <functional>
 
 namespace util {
 
@@ -11,6 +12,10 @@ public:
 
     void set_rate(float rate);
 
+    void set_callback(std::function<void()> callback);
+
+    void remove_callback();
+
     void reset();
 
     [[nodiscard]] float blend() const;
@@ -20,8 +25,6 @@ public:
 
     void update();
 
-    [[nodiscard]] bool is_ready() const;
-
 private:
     std::chrono::time_point<std::chrono::steady_clock> m_start;
     std::chrono::time_point<std::chrono::steady_clock> m_end;
@@ -29,6 +32,9 @@ private:
     bool m_is_ready;
     int64_t m_rate;
     double m_blend;
+    std::optional<std::function<void()>> m_callback;
+
+    void update_state();
 };
 
 }
