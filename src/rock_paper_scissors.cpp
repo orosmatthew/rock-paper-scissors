@@ -334,10 +334,14 @@ void run(const RockPaperScissorsConfig& config)
 
         if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && selected_piece_index.has_value()) {
             selected_piece_index.reset();
+            raylib::Mouse::SetCursor(MOUSE_CURSOR_DEFAULT);
         }
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             selected_piece_index = get_piece_from_click(pieces, config.piece_size, GetMousePosition());
+            if (selected_piece_index.has_value()) {
+                raylib::Mouse::SetCursor(MOUSE_CURSOR_POINTING_HAND);
+            }
         }
 
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && selected_piece_index.has_value()) {
