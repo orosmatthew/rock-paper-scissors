@@ -4,6 +4,9 @@
 
 namespace rps {
 
+/**
+ * @brief Initial simulation configuration
+ */
 struct RockPaperScissorsConfig {
     int screen_width;
     int screen_height;
@@ -13,6 +16,10 @@ struct RockPaperScissorsConfig {
     float volume;
 };
 
+/**
+ * @brief Run simulation
+ * @param config - Initial configuration to start
+ */
 void run(const RockPaperScissorsConfig& config);
 
 }

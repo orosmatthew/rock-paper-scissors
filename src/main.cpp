@@ -4,6 +4,7 @@
 
 int main()
 {
+    // Initial simulation configuration
     rps::RockPaperScissorsConfig config {
         .screen_width = 1200,
         .screen_height = 800,
@@ -13,6 +14,7 @@ int main()
         .volume = 0.5f,
     };
 
+    // Run game
     try {
         rps::run(config);
     }
