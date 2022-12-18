@@ -500,6 +500,7 @@ void run(const RockPaperScissorsConfig& config)
         bool fullscreen_pressed;
         bool restart_pressed;
         bool hud_pressed;
+        bool defaults_pressed;
 
         BeginDrawing();
         {
@@ -569,6 +570,9 @@ void run(const RockPaperScissorsConfig& config)
                     1,
                     100));
 
+                // Defaults button
+                defaults_pressed = GuiButton(raylib::Rectangle(controls_offset + 620, 2, 70, 25), "Defaults");
+
                 // Hide HUD button
                 hud_pressed = GuiButton(raylib::Rectangle(static_cast<float>(screen_width - 30), 2, 25, 25), "#44#");
 
@@ -588,6 +592,12 @@ void run(const RockPaperScissorsConfig& config)
         EndDrawing();
 
         audio_device.SetVolume(volume);
+
+        if (defaults_pressed) {
+            new_rate = static_cast<int>(config.simulation_rate);
+            new_piece_size = config.piece_size;
+            new_piece_count = config.piece_count;
+        }
 
         // Toggle HUD
         if (hud_pressed || IsKeyPressed(KEY_H)) {
