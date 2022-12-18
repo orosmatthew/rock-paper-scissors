@@ -10,6 +10,7 @@ struct RockPaperScissorsConfig {
     float simulation_rate;
     int piece_size;
     int piece_count;
+    float volume;
 };
 
 void run(const RockPaperScissorsConfig& config);

@@ -10,6 +10,7 @@ int main()
         .simulation_rate = 45,
         .piece_size = 28,
         .piece_count = 125,
+        .volume = 0.5f,
     };
 
     try {
