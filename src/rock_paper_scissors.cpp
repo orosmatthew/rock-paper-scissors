@@ -351,7 +351,7 @@ static void update_resources_piece_size(Resources& res, int piece_size)
  */
 static Resources init_resources(int piece_size)
 {
-    std::filesystem::path res_path = std::filesystem::path(GetApplicationDirectory()) / "../" / "res";
+    std::filesystem::path res_path = std::filesystem::path(GetApplicationDirectory()) / "res";
 
     raylib::Image rock_image((res_path / "rock.png").string());
     raylib::Image paper_image((res_path / "paper.png").string());
