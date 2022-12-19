@@ -12,6 +12,7 @@ int main()
         .piece_size = 28,
         .piece_count = 125,
         .volume = 0.5f,
+        .piece_samples = 15,
     };
 
     // Run game

@@ -14,6 +14,7 @@ struct RockPaperScissorsConfig {
     int piece_size;
     int piece_count;
     float volume;
+    int piece_samples;
 };
 
 /**
