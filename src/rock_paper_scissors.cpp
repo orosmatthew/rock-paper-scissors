@@ -553,6 +553,8 @@ void main_loop(
         }
     }
 
+    fixed_loop.update();
+
     // De-selecting piece with mouse
     if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && game_state.selected_piece_index.has_value()) {
         game_state.selected_piece_index.reset();
@@ -575,8 +577,6 @@ void main_loop(
         game_state.pieces.at(game_state.selected_piece_index.value()).pos
             = raylib::Vector2(GetMousePosition()) - piece_middle;
     }
-
-    fixed_loop.update();
 
     BeginDrawing();
     {
