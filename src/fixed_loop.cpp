@@ -15,14 +15,19 @@ FixedLoop::FixedLoop(float rate)
     m_blend = 0;
 }
 
-void FixedLoop::update()
+void FixedLoop::update(int max_loops, std::optional<std::function<void()>> callback)
 {
     update_state();
+    int loop_count = 0;
     while (m_is_ready) {
-        if (m_callback.has_value()) {
-            std::invoke(*m_callback);
+        if (callback.has_value()) {
+            std::invoke(callback.value());
         }
         update_state();
+        loop_count++;
+        if (loop_count >= max_loops) {
+            break;
+        }
     }
 }
 
@@ -42,16 +47,6 @@ void FixedLoop::reset()
     m_end = std::chrono::steady_clock::now();
     m_delta = 0;
     m_is_ready = false;
-}
-
-void FixedLoop::set_callback(std::function<void()> callback)
-{
-    m_callback = std::move(callback);
-}
-
-void FixedLoop::remove_callback()
-{
-    m_callback.reset();
 }
 
 void FixedLoop::update_state()

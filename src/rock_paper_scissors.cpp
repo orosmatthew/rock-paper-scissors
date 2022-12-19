@@ -553,7 +553,20 @@ void main_loop(
         }
     }
 
-    fixed_loop.update();
+    fixed_loop.update(20, [&]() {
+        if (game_state.is_paused) {
+            return;
+        }
+        update_pieces_pos(
+            game_state.pieces,
+            game_state.screen_width,
+            game_state.screen_height,
+            game_state.piece_size,
+            config.piece_samples);
+        for_all_pairs<Piece>(game_state.pieces, [&](Piece& p1, Piece& p2) {
+            update_piece_types(p1, p2, game_state.piece_size, game_state.resources);
+        });
+    });
 
     // De-selecting piece with mouse
     if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && game_state.selected_piece_index.has_value()) {
@@ -694,22 +707,6 @@ void run(const RockPaperScissorsConfig& config)
     game_state.resources = init_resources(game_state.piece_size);
 
     game_state.pieces = init_pieces(game_state.piece_count, game_state.screen_width, game_state.screen_height);
-
-    // Fixed timestep for simulation calculations
-    fixed_loop.set_callback([&]() {
-        if (game_state.is_paused) {
-            return;
-        }
-        update_pieces_pos(
-            game_state.pieces,
-            game_state.screen_width,
-            game_state.screen_height,
-            game_state.piece_size,
-            config.piece_samples);
-        for_all_pairs<Piece>(game_state.pieces, [&](Piece& p1, Piece& p2) {
-            update_piece_types(p1, p2, game_state.piece_size, game_state.resources);
-        });
-    });
 
     while (!window.ShouldClose()) {
         main_loop(config, window, audio_device, fixed_loop, game_state);

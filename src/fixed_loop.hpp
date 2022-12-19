@@ -24,17 +24,6 @@ public:
     void set_rate(float rate);
 
     /**
-     * @brief Set callback
-     * @param callback - Function for callback
-     */
-    void set_callback(std::function<void()> callback);
-
-    /**
-     * @brief Clear current callback
-     */
-    void remove_callback();
-
-    /**
      * @brief Reset time delta (Used in case timestep is too far behind)
      */
     void reset();
@@ -51,7 +40,7 @@ public:
     /**
      * @brief Update loop and callback
      */
-    void update();
+    void update(int max_loops, std::optional<std::function<void()>> callback);
 
 private:
     std::chrono::time_point<std::chrono::steady_clock> m_start;
@@ -60,7 +49,6 @@ private:
     bool m_is_ready;
     int64_t m_rate;
     double m_blend;
-    std::optional<std::function<void()>> m_callback;
 
     void update_state();
 };
