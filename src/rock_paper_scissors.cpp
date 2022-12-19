@@ -269,7 +269,7 @@ static void play_piece_sound(Resources& res, PieceType type)
  * @param piece_size - Size of piece
  * @param res - Resources for playing sounds
  */
-void update_piece_types(Piece& p1, Piece& p2, int piece_size, Resources& res)
+static void update_piece_types(Piece& p1, Piece& p2, int piece_size, Resources& res)
 {
     const float inner_padding = static_cast<float>(piece_size) * 0.15f;
     const raylib::Vector2 piece_size_vec(
@@ -336,7 +336,8 @@ void update_piece_types(Piece& p1, Piece& p2, int piece_size, Resources& res)
  * @param vec - Vector
  * @param func - Function
  */
-template <typename T> static void for_all_pairs(std::vector<T>& vec, std::function<void(T&, T&)> func)
+template <typename T>
+static void for_all_pairs(std::vector<T>& vec, std::function<void(T&, T&)> func)
 {
     for (int i = 0; i < vec.size() - 1; i++) {
         for (int j = i + 1; j < vec.size(); j++) {
@@ -454,7 +455,7 @@ static std::vector<Piece> update_piece_count(
  * @param res - Resources for piece textures
  * @param blend - Blend fraction for position interpolation
  */
-void draw_pieces(std::vector<Piece>& pieces, Resources& res, float blend)
+static void draw_pieces(std::vector<Piece>& pieces, Resources& res, float blend)
 {
     for (Piece& p : pieces) {
         switch (p.type) {
@@ -471,7 +472,12 @@ void draw_pieces(std::vector<Piece>& pieces, Resources& res, float blend)
     }
 }
 
-void draw_hud(GameState& game_state, UIStates& ui_states)
+/**
+ * @brief Draw HUD at the top of the screen
+ * @param game_state
+ * @param ui_states
+ */
+static void draw_hud(GameState& game_state, UIStates& ui_states)
 {
     // Toolbar
     DrawRectangle(0, 0, game_state.screen_width, 30, raylib::Color::LightGray());
@@ -535,7 +541,15 @@ void draw_hud(GameState& game_state, UIStates& ui_states)
         1);
 }
 
-void main_loop(
+/**
+ * @brief Main game loop
+ * @param config
+ * @param window
+ * @param audio_device
+ * @param fixed_loop
+ * @param game_state
+ */
+static void main_loop(
     const RockPaperScissorsConfig& config,
     raylib::Window& window,
     raylib::AudioDevice& audio_device,
