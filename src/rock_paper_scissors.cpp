@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <format>
 
 #define RAYGUI_IMPLEMENTATION
 #include <raygui.h>
