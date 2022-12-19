@@ -275,6 +275,11 @@ void update_piece_types(Piece& p1, Piece& p2, int piece_size, Resources& res)
     const raylib::Vector2 piece_size_vec(
         static_cast<float>(piece_size) - inner_padding, static_cast<float>(piece_size) - inner_padding);
 
+    // Quick exit if pieces are far apart
+    if (p1.pos.DistanceSqr(p2.pos) > (powf(static_cast<float>(piece_size), 2) * 2)) {
+        return;
+    }
+
     const raylib::Rectangle p1_rect(p1.pos, piece_size_vec);
     const raylib::Rectangle p2_rect(p2.pos, piece_size_vec);
 
