@@ -1,8 +1,8 @@
 #include "rock_paper_scissors.hpp"
 
 #include <filesystem>
-#include <optional>
 #include <format>
+#include <optional>
 
 #define RAYGUI_IMPLEMENTATION
 #include <raygui.h>
@@ -198,7 +198,12 @@ static std::optional<bool> are_pieces_attracted(const Piece& p1, const Piece& p2
  * @param piece_size
  */
 static void update_pieces_pos(
-    std::vector<Piece>& pieces, int screen_width, int screen_height, int piece_size, int close_samples)
+    std::vector<Piece>& pieces,
+    int screen_width,
+    int screen_height,
+    int piece_size,
+    int close_samples,
+    bool is_hud_shown)
 {
     // Update previous positions before updating them
     for (Piece& p : pieces) {
@@ -239,7 +244,11 @@ static void update_pieces_pos(
 
         // Clamp positions so they cannot leave the screen
         p1.pos.x = std::clamp(p1.pos.x, 0.0f, static_cast<float>(screen_width) - static_cast<float>(piece_size));
-        p1.pos.y = std::clamp(p1.pos.y, 30.0f, static_cast<float>(screen_height) - static_cast<float>(piece_size));
+        float hud_offset = 30.0f;
+        if (!is_hud_shown) {
+            hud_offset = 0.0f;
+        }
+        p1.pos.y = std::clamp(p1.pos.y, hud_offset, static_cast<float>(screen_height) - static_cast<float>(piece_size));
     }
 }
 
@@ -582,7 +591,8 @@ static void main_loop(
             game_state.screen_width,
             game_state.screen_height,
             game_state.piece_size,
-            config.piece_samples);
+            config.piece_samples,
+            game_state.hud_shown);
         for_all_pairs<Piece>(game_state.pieces, [&](Piece& p1, Piece& p2) {
             update_piece_types(p1, p2, game_state.piece_size, game_state.resources);
         });
