@@ -12,6 +12,12 @@ namespace util {
 class FixedLoop {
 
 public:
+
+    /*
+     * @brief Constructs FixedLoop with rate of 60 hz
+     */
+    FixedLoop();
+
     /**
      * @brief Construct FixedLoop
      * @param rate - Rate (Steps per second)
@@ -34,9 +40,6 @@ public:
      * @return - Returns blend fraction between 0.0f and 1.0f
      */
     [[nodiscard]] float blend() const;
-
-    FixedLoop(FixedLoop const& other) = delete;
-    FixedLoop& operator=(FixedLoop const& other) = delete;
 
     /**
      * @brief Update loop and callback

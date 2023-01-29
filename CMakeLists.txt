@@ -4,6 +4,11 @@ project(rock_paper_scissors)
 
 set(CMAKE_CXX_STANDARD 20)
 
+if (EMSCRIPTEN)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fwasm-exceptions --preload-file res -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s EXPORTED_FUNCTIONS=\"['_main', '_malloc']\" -s \"EXPORTED_RUNTIME_METHODS=['ccall']\"")
+    set(CMAKE_EXECUTABLE_SUFFIX ".html") # This line is used to set your executable to build with the emscripten html template so that you can directly open it.
+endif ()
+
 add_subdirectory(lib/raylib-4.2.0)
 add_subdirectory(lib/raylib-cpp-4.2.7)
 

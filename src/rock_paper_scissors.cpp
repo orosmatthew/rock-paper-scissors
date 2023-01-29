@@ -5,6 +5,9 @@
 
 #define RAYGUI_IMPLEMENTATION
 #include <raygui.h>
+#if defined(PLATFORM_WEB)
+#include <emscripten.h>
+#endif
 
 #include "fixed_loop.hpp"
 
@@ -84,6 +87,11 @@ struct GameState {
 
     // Previous windowed size for when fullscreen is toggled off
     raylib::Vector2 previous_windowed_size;
+
+    RockPaperScissorsConfig config;
+    raylib::Window window;
+    raylib::AudioDevice audio_device;
+    util::FixedLoop fixed_loop;
 };
 
 /**
@@ -404,7 +412,11 @@ static void update_resources_piece_size(Resources& res, int piece_size)
  */
 static Resources init_resources(int piece_size)
 {
+#if defined(PLATFORM_WEB)
+    std::filesystem::path res_path = "res";
+#else
     std::filesystem::path res_path = std::filesystem::path(GetApplicationDirectory()) / "res";
+#endif
 
     raylib::Image rock_image((res_path / "rock.png").string());
     raylib::Image paper_image((res_path / "paper.png").string());
@@ -537,8 +549,10 @@ static void draw_hud(GameState& game_state, UIStates& ui_states)
         = GuiButton(raylib::Rectangle(static_cast<float>(game_state.screen_width - 30), 2, 25, 25), "#44#");
 
     // Fullscreen button
+#if !defined(PLATFORM_WEB)
     ui_states.fullscreen_pressed
         = GuiButton(raylib::Rectangle(static_cast<float>(game_state.screen_width - 65), 2, 25, 25), "#69#");
+#endif
 
     // Volume slider
     game_state.volume = GuiSlider(
@@ -550,6 +564,11 @@ static void draw_hud(GameState& game_state, UIStates& ui_states)
         1);
 }
 
+#if defined(PLATFORM_WEB)
+EM_JS(int, web_canvas_width, (), { return canvas.width; });
+EM_JS(int, web_canvas_height, (), { return canvas.height; });
+#endif
+
 /**
  * @brief Main game loop
  * @param config
@@ -558,154 +577,156 @@ static void draw_hud(GameState& game_state, UIStates& ui_states)
  * @param fixed_loop
  * @param game_state
  */
-static void main_loop(
-    const RockPaperScissorsConfig& config,
-    raylib::Window& window,
-    raylib::AudioDevice& audio_device,
-    util::FixedLoop& fixed_loop,
-    GameState& game_state)
+static void main_loop(void* game_state_ptr)
 {
+    GameState& state = *((GameState*)game_state_ptr);
+
+#if defined(PLATFORM_WEB)
+    if (state.screen_width != web_canvas_width() || state.screen_height != web_canvas_height()) {
+        state.window.SetSize(web_canvas_width(), web_canvas_height());
+    }
+#endif
+
     // Update screen size
-    if (window.IsResized()) {
-        game_state.screen_height = window.GetHeight();
-        game_state.screen_width = window.GetWidth();
+    if (state.window.IsResized()) {
+        state.screen_height = state.window.GetHeight();
+        state.screen_width = state.window.GetWidth();
     }
 
     // Pause with keyboard shortcut
     if (IsKeyPressed(KEY_P)) {
-        if (game_state.is_paused) {
-            game_state.is_paused = false;
+        if (state.is_paused) {
+            state.is_paused = false;
         }
         else {
-            game_state.is_paused = true;
+            state.is_paused = true;
         }
     }
 
-    fixed_loop.update(20, [&]() {
-        if (game_state.is_paused) {
+    state.fixed_loop.update(20, [&]() {
+        if (state.is_paused) {
             return;
         }
         update_pieces_pos(
-            game_state.pieces,
-            game_state.screen_width,
-            game_state.screen_height,
-            game_state.piece_size,
-            config.piece_samples,
-            game_state.hud_shown);
-        for_all_pairs<Piece>(game_state.pieces, [&](Piece& p1, Piece& p2) {
-            update_piece_types(p1, p2, game_state.piece_size, game_state.resources);
+            state.pieces,
+            state.screen_width,
+            state.screen_height,
+            state.piece_size,
+            state.config.piece_samples,
+            state.hud_shown);
+        for_all_pairs<Piece>(state.pieces, [&](Piece& p1, Piece& p2) {
+            update_piece_types(p1, p2, state.piece_size, state.resources);
         });
     });
 
     // De-selecting piece with mouse
-    if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && game_state.selected_piece_index.has_value()) {
-        game_state.selected_piece_index.reset();
+    if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && state.selected_piece_index.has_value()) {
+        state.selected_piece_index.reset();
         raylib::Mouse::SetCursor(MOUSE_CURSOR_DEFAULT);
     }
 
     // Select piece with mouse
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        game_state.selected_piece_index
-            = get_piece_from_click(game_state.pieces, game_state.piece_size, GetMousePosition());
-        if (game_state.selected_piece_index.has_value()) {
+        state.selected_piece_index = get_piece_from_click(state.pieces, state.piece_size, GetMousePosition());
+        if (state.selected_piece_index.has_value()) {
             raylib::Mouse::SetCursor(MOUSE_CURSOR_POINTING_HAND);
         }
     }
 
     // Dragging piece with mouse
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && game_state.selected_piece_index.has_value()) {
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && state.selected_piece_index.has_value()) {
         const raylib::Vector2 piece_middle(
-            static_cast<float>(game_state.piece_size) / 2.0f, static_cast<float>(game_state.piece_size) / 2.0f);
-        game_state.pieces.at(game_state.selected_piece_index.value()).pos
-            = raylib::Vector2(GetMousePosition()) - piece_middle;
+            static_cast<float>(state.piece_size) / 2.0f, static_cast<float>(state.piece_size) / 2.0f);
+        state.pieces.at(state.selected_piece_index.value()).pos = raylib::Vector2(GetMousePosition()) - piece_middle;
     }
 
     BeginDrawing();
     {
-        window.ClearBackground(raylib::Color::RayWhite());
+        state.window.ClearBackground(raylib::Color::RayWhite());
 
         // Get blend value for position interpolation
-        float blend = fixed_loop.blend();
-        if (game_state.is_paused) {
+        float blend = state.fixed_loop.blend();
+        if (state.is_paused) {
             blend = 1.0f;
         }
 
-        draw_pieces(game_state.pieces, game_state.resources, blend);
+        draw_pieces(state.pieces, state.resources, blend);
 
         // Draw UI
-        if (game_state.hud_shown) {
-            draw_hud(game_state, game_state.ui_states);
+        if (state.hud_shown) {
+            draw_hud(state, state.ui_states);
         }
         else {
-            raylib::Rectangle hud_show_rect(static_cast<float>(game_state.screen_width - 30), 2, 25, 25);
-            game_state.ui_states.hud_pressed = GuiButton(hud_show_rect, "#45#");
+            raylib::Rectangle hud_show_rect(static_cast<float>(state.screen_width - 30), 2, 25, 25);
+            state.ui_states.hud_pressed = GuiButton(hud_show_rect, "#45#");
         }
     }
     EndDrawing();
 
-    audio_device.SetVolume(game_state.volume);
+    state.audio_device.SetVolume(state.volume);
 
     // Defaults
-    if (game_state.ui_states.defaults_pressed) {
-        game_state.ui_states.rate = static_cast<int>(config.simulation_rate);
-        game_state.ui_states.piece_size = config.piece_size;
-        game_state.ui_states.piece_count = config.piece_count;
+    if (state.ui_states.defaults_pressed) {
+        state.ui_states.rate = static_cast<int>(state.config.simulation_rate);
+        state.ui_states.piece_size = state.config.piece_size;
+        state.ui_states.piece_count = state.config.piece_count;
     }
 
     // Toggle HUD
-    if (game_state.ui_states.hud_pressed || IsKeyPressed(KEY_H)) {
-        if (game_state.hud_shown) {
-            game_state.hud_shown = false;
+    if (state.ui_states.hud_pressed || IsKeyPressed(KEY_H)) {
+        if (state.hud_shown) {
+            state.hud_shown = false;
         }
         else {
-            game_state.hud_shown = true;
+            state.hud_shown = true;
         }
     }
 
     // Restart
-    if (game_state.ui_states.restart_pressed || IsKeyPressed(KEY_SPACE)) {
-        game_state.pieces = init_pieces(game_state.piece_count, game_state.screen_width, game_state.screen_height);
+    if (state.ui_states.restart_pressed || IsKeyPressed(KEY_SPACE)) {
+        state.pieces = init_pieces(state.piece_count, state.screen_width, state.screen_height);
     }
 
     // Toggle fullscreen
-    if (game_state.ui_states.fullscreen_pressed || IsKeyPressed(KEY_F)) {
-        if (!window.IsFullscreen()) {
-            game_state.previous_windowed_size = window.GetSize();
+    if (state.ui_states.fullscreen_pressed || IsKeyPressed(KEY_F)) {
+        if (!state.window.IsFullscreen()) {
+            state.previous_windowed_size = state.window.GetSize();
             int display = GetCurrentMonitor();
-            window.SetSize(GetMonitorWidth(display), GetMonitorHeight(display));
-            game_state.screen_height = window.GetHeight();
-            game_state.screen_width = window.GetWidth();
-            window.ToggleFullscreen();
+            state.window.SetSize(GetMonitorWidth(display), GetMonitorHeight(display));
+            state.screen_height = state.window.GetHeight();
+            state.screen_width = state.window.GetWidth();
+            state.window.ToggleFullscreen();
         }
         else {
-            window.ToggleFullscreen();
-            window.SetSize(game_state.previous_windowed_size);
+            state.window.ToggleFullscreen();
+            state.window.SetSize(state.previous_windowed_size);
         }
     }
 
     // Simulation rate
-    if (game_state.ui_states.rate != game_state.simulation_rate) {
-        game_state.simulation_rate = game_state.ui_states.rate;
-        fixed_loop.set_rate(static_cast<float>(game_state.simulation_rate));
+    if (state.ui_states.rate != state.simulation_rate) {
+        state.simulation_rate = state.ui_states.rate;
+        state.fixed_loop.set_rate(static_cast<float>(state.simulation_rate));
     }
 
     // Piece size
-    if (game_state.ui_states.piece_size != game_state.piece_size) {
-        game_state.piece_size = game_state.ui_states.piece_size;
-        update_resources_piece_size(game_state.resources, game_state.piece_size);
+    if (state.ui_states.piece_size != state.piece_size) {
+        state.piece_size = state.ui_states.piece_size;
+        update_resources_piece_size(state.resources, state.piece_size);
     }
 
     // Piece count
-    if (game_state.ui_states.piece_count != game_state.piece_count) {
-        game_state.piece_count = game_state.ui_states.piece_count;
-        game_state.pieces = update_piece_count(
-            game_state.pieces, game_state.piece_count, game_state.screen_width, game_state.screen_height);
+    if (state.ui_states.piece_count != state.piece_count) {
+        state.piece_count = state.ui_states.piece_count;
+        state.pieces = update_piece_count(state.pieces, state.piece_count, state.screen_width, state.screen_height);
     }
 }
 
 void run(const RockPaperScissorsConfig& config)
 {
     GameState game_state {};
+
+    game_state.config = config;
 
     game_state.piece_count = config.piece_count;
     game_state.simulation_rate = static_cast<int>(config.simulation_rate);
@@ -718,28 +739,37 @@ void run(const RockPaperScissorsConfig& config)
     SetConfigFlags(ConfigFlags::FLAG_VSYNC_HINT);
     SetConfigFlags(ConfigFlags::FLAG_WINDOW_RESIZABLE);
 
+#if defined(PLATFORM_WEB)
+    raylib::Window window(web_canvas_width(), web_canvas_height(), "Rock Paper Scissors");
+#else
     raylib::Window window(config.screen_width, config.screen_height, "Rock Paper Scissors");
+#endif
 
     game_state.screen_width = window.GetWidth();
     game_state.screen_height = window.GetHeight();
 
     game_state.previous_windowed_size = window.GetSize();
 
-    raylib::AudioDevice audio_device;
     float volume = config.volume;
-    audio_device.SetVolume(volume);
+    game_state.audio_device.SetVolume(volume);
 
     SetExitKey(KEY_ESCAPE);
 
-    util::FixedLoop fixed_loop(static_cast<float>(game_state.simulation_rate));
+    game_state.fixed_loop = util::FixedLoop(static_cast<float>(game_state.simulation_rate));
 
     game_state.resources = init_resources(game_state.piece_size);
 
     game_state.pieces = init_pieces(game_state.piece_count, game_state.screen_width, game_state.screen_height);
 
-    while (!window.ShouldClose()) {
-        main_loop(config, window, audio_device, fixed_loop, game_state);
+#if defined(PLATFORM_WEB)
+    game_state.window.SetSize(web_canvas_width(), web_canvas_height());
+
+    emscripten_set_main_loop_arg(main_loop, &game_state, 0, 1);
+#else
+    while (!game_state.window.ShouldClose()) {
+        main_loop(&game_state);
     }
+#endif
 }
 
 }

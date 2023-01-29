@@ -26,6 +26,7 @@ void FixedLoop::update(int max_loops, std::optional<std::function<void()>> callb
         update_state();
         loop_count++;
         if (loop_count >= max_loops) {
+            reset();
             break;
         }
     }
@@ -62,6 +63,16 @@ void FixedLoop::update_state()
         m_is_ready = false;
     }
     m_blend = static_cast<double>(m_delta) / static_cast<double>(m_rate);
+}
+
+FixedLoop::FixedLoop()
+{
+    m_start = std::chrono::steady_clock::now();
+    m_end = std::chrono::steady_clock::now();
+    m_delta = 0;
+    m_is_ready = false;
+    m_rate = static_cast<int64_t>((static_cast<double>(1.0 / 60.0f)) * static_cast<int64_t>(1000000000));
+    m_blend = 0;
 }
 
 }
