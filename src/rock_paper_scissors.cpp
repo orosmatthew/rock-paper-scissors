@@ -1,7 +1,6 @@
 #include "rock_paper_scissors.hpp"
 
 #include <filesystem>
-#include <format>
 #include <optional>
 
 #define RAYGUI_IMPLEMENTATION
