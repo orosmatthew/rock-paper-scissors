@@ -492,7 +492,7 @@ static void draw_hud(GameState& game_state, UIStates& ui_states)
     DrawRectangle(0, 0, game_state.screen_width, 30, raylib::Color::LightGray());
 
     // FPS
-    raylib::DrawText(std::format("{} FPS", GetFPS()), 10, 6, 20, raylib::Color::DarkGreen());
+    raylib::DrawText(std::to_string(GetFPS()) + " FPS", 10, 6, 20, raylib::Color::DarkGreen());
 
     const int controls_offset = 125;
 
