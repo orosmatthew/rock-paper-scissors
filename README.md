@@ -31,7 +31,7 @@ cmake --build build
 ```bash
 git clone https://github.com/orosmatthew/rock-paper-scissors
 cd rock-paper-scissors
-cmake -S . -B build -DPLATFORM=Web --toolchain <fullpath_to_emsdk >/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+cmake -S . -B build -DPLATFORM=Web --toolchain <fullpath_to_emsdk>/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
 # Then copy res/ folder to build/ folder
 cmake --build build
 # Then copy /dist/index.html to build/ folder
